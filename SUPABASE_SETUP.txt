@@ -1,0 +1,112 @@
+===========================================
+  CONECTAR TV DIGITAL PRO CON SUPABASE
+===========================================
+
+PASO 1 — Crear cuenta gratuita
+-------------------------------
+1. Ve a https://supabase.com
+2. Clic en "Start your project"
+3. Regístrate con Google o email
+4. Crea un nuevo proyecto:
+   - Nombre: tvdigital
+   - Contraseña: (anota una segura)
+   - Region: elige la más cercana
+
+PASO 2 — Crear las tablas
+--------------------------
+En tu proyecto Supabase, ve a:
+  SQL Editor → New Query
+
+Copia y pega este código SQL y ejecuta:
+
+-------- INICIO SQL --------
+CREATE TABLE clientes (
+  id TEXT PRIMARY KEY,
+  nombre TEXT NOT NULL,
+  whatsapp TEXT,
+  plan TEXT DEFAULT 'mensual',
+  categoria TEXT DEFAULT 'normal',
+  inicio DATE,
+  vencimiento DATE,
+  precio TEXT,
+  "usuarioTv" TEXT,
+  "claveTv" TEXT,
+  notas TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE pagos (
+  id TEXT PRIMARY KEY,
+  "clienteId" TEXT REFERENCES clientes(id) ON DELETE CASCADE,
+  "clienteNombre" TEXT,
+  monto TEXT,
+  fecha DATE,
+  nota TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE config (
+  id INTEGER PRIMARY KEY DEFAULT 1,
+  data JSONB
+);
+
+-- Permitir acceso publico (necesario para la app)
+ALTER TABLE clientes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pagos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE config ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "acceso_total_clientes" ON clientes FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "acceso_total_pagos" ON pagos FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "acceso_total_config" ON config FOR ALL USING (true) WITH CHECK (true);
+-------- FIN SQL --------
+
+PASO 3 — Obtener tus claves
+-----------------------------
+En Supabase ve a:
+  Settings → API
+
+Copia:
+  - Project URL   → algo como https://abcxyz.supabase.co
+  - anon public   → una clave larga que empieza con "eyJ..."
+
+PASO 4 — Pegar las claves en el código
+----------------------------------------
+Abre el archivo: src/App.jsx
+
+Busca estas dos líneas al inicio:
+  const SUPABASE_URL = "TU_URL_AQUI";
+  const SUPABASE_KEY = "TU_ANON_KEY_AQUI";
+
+Reemplaza con tus valores:
+  const SUPABASE_URL = "https://abcxyz.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6...";
+
+PASO 5 — Construir y subir
+----------------------------
+npm install
+npm run build
+
+Sube la carpeta dist/ a Netlify Drop:
+  https://app.netlify.com/drop
+
+===========================================
+  INDICADORES EN LA APP
+===========================================
+
+☁️ Nube     = Conectado y sincronizado
+⏳ Sync...  = Guardando en la nube
+⚠️ Sin sync = Error de conexion (usa datos locales)
+💾 Local    = Sin Supabase configurado
+
+Los datos siempre se guardan localmente
+PRIMERO y luego se sincronizan a la nube.
+Si no hay internet, la app sigue funcionando.
+
+===========================================
+  MIGRACION DE DATOS EXISTENTES
+===========================================
+
+Si ya tienes clientes cargados en el
+navegador, la app los detecta automaticamente
+y los sube a Supabase la primera vez.
+
